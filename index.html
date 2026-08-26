@@ -164,6 +164,7 @@
       <button data-view="history" onclick="showView('history')">History</button>
     </nav>
     <button class="coach-link" onclick="openCoachPanel()">Coach Mode</button>
+      <button class="coach-link" onclick="doSignOut()">Sign Out</button>
   </div>
 </div>
 
@@ -361,6 +362,7 @@ var CONFIG = {
   ],
 
   hsChampionships: "Sectionals \u2192 Districts \u2192 Senior Meet taper framework is set (see Training Rules), but exact dates aren't in yet. Add them here once confirmed.",
+  athleteName: "Nolan",
 
   program: {
     1: {
@@ -474,6 +476,11 @@ var CONFIG = {
     await loadProfileAndStart();
   };
 
+  window.doSignOut = async function(){
+    await sb.auth.signOut();
+    location.reload();
+  };
+
   async function loadProfileAndStart(){
     var status = document.getElementById('login-status');
     var sessionRes = await sb.auth.getSession();
@@ -482,7 +489,8 @@ var CONFIG = {
     auth.user = user;
     var profRes = await sb.from('profiles').select('role,athlete_id').eq('id', user.id).single();
     if (profRes.error || !profRes.data){
-      if (status) status.textContent = 'Signed in, but no profile is set up for this account yet. Ask your coach to finish the Supabase setup step.';
+      var detail = profRes.error ? (profRes.error.message + ' (code: ' + (profRes.error.code||'none') + ')') : 'no matching row found';
+      if (status) status.textContent = 'Signed in (user id: ' + user.id + '), but profile lookup failed: ' + detail;
       return;
     }
     auth.role = profRes.data.role;
@@ -904,6 +912,14 @@ var CONFIG = {
   }
 
   // ---------------- HISTORY (Supabase) ----------------
+  var siteAthleteId = null;
+  async function resolveSiteAthleteId(){
+    if (siteAthleteId) return siteAthleteId;
+    var res = await sb.from('athletes').select('id').eq('name', CONFIG.athleteName).single();
+    if (!res.error && res.data) siteAthleteId = res.data.id;
+    return siteAthleteId;
+  }
+
   async function renderHistory(){
     var statusEl = document.getElementById('history-status');
     var listEl = document.getElementById('history-list');
@@ -911,8 +927,10 @@ var CONFIG = {
     statusEl.innerHTML = '<p class="small">Loading history\u2026</p>';
     listEl.innerHTML = '';
 
-    var query = sb.from('workouts').select('id,workout_type,workout_label,phase,workout_date,readiness,notes').order('workout_date', {ascending:false}).order('created_at', {ascending:false});
-    if (auth.role !== 'coach') query = query.eq('athlete_id', auth.athleteId);
+    var scopedId = await resolveSiteAthleteId();
+    if (!scopedId){ statusEl.innerHTML = '<p class="small">Could not find this athlete record yet — check Supabase setup.</p>'; return; }
+
+    var query = sb.from('workouts').select('id,workout_type,workout_label,phase,workout_date,readiness,notes').eq('athlete_id', scopedId).order('workout_date', {ascending:false}).order('created_at', {ascending:false});
     var res = await query;
     if (res.error){ statusEl.innerHTML = '<p class="small">Could not load history: '+res.error.message+'</p>'; return; }
     if (!res.data.length){ statusEl.innerHTML = '<p class="small">No workouts saved yet. Complete one and it will show up here.</p>'; return; }
