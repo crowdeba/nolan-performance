@@ -186,7 +186,7 @@
     </div>
     <div class="card accent-charcoal" style="margin-top:14px;">
       <h3>Proud Moments</h3>
-      <p class="small" style="margin-top:6px;">Not everything worth being proud of shows up on a scoreboard. A cleaner turn, a heavier squat, a hard practice you didn't want to show up for but did anyway &mdash; jot it down here when it happens.</p>
+      <p class="small" style="margin-top:6px;">Not everything worth being proud of shows up on a scoreboard. A cleaner turn, a heavier squat, a hard practice you didn't want to show up for but did anyway &mdash; jot it down here when it happens. If you're drawing a blank, that's worth mentioning to someone, not just this app.</p>
       <textarea class="field" style="margin-top:8px;" placeholder="e.g. Held my breaststroke stroke count for the whole 100 today..."></textarea>
     </div>
   </div>
@@ -285,7 +285,7 @@
 <div id="login-panel" style="position:fixed; inset:0; background:var(--charcoal); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;">
   <div class="card" style="max-width:380px; width:100%;">
     <h3>Sign In</h3>
-    <p class="small" style="margin-top:6px;">Nolan and Coach each sign in with their own account.</p>
+    <p class="small" id="login-subtitle" style="margin-top:6px;">Sign in with your own account.</p>
     <label class="field-label" style="margin-top:12px;">Email</label>
     <input class="field" id="login-email" type="email" placeholder="you@example.com">
     <label class="field-label" style="margin-top:10px;">Password</label>
@@ -465,6 +465,8 @@ var CONFIG = {
   var SUPABASE_ANON_KEY = "sb_publishable_v83BXXAIW3UoMrndPi4tCw_cMoaPbnR";
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   var auth = { user:null, role:null, athleteId:null };
+  var subtitleEl = document.getElementById('login-subtitle');
+  if (subtitleEl && CONFIG.athleteName) subtitleEl.textContent = CONFIG.athleteName + ' and Coach each sign in with their own account.';
 
   window.doSignIn = async function(){
     var email = document.getElementById('login-email').value.trim();
